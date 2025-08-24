@@ -55,6 +55,8 @@ for phi in phases:
     coded_images.append(coded_color_image)
 print("処理完了")
 
+# ----------------------------------------------------------------------------
+
 # # --- 結果の可視化 ---
 # fig, axes = plt.subplots(1, 5, figsize=(25, 5))
 
@@ -83,6 +85,8 @@ print("処理完了")
 # plt.tight_layout()
 # plt.savefig('coded_images.png')
 # plt.show()
+
+# ----------------------------------------------------------------------------
 
 # 4枚の符号化された生データを使って計算
 g_0,g_pi_half,g_pi,g_3pi_half=coded_images[0],coded_images[1],coded_images[2],coded_images[3]
