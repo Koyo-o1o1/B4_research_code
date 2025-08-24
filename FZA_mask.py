@@ -6,11 +6,13 @@ import matplotlib.pyplot as plt
 image_size=512
 
 # 空間座標の範囲
-grid_range=5.0
+grid_range=3.0
 
 # FZAのパラメータ
-beta=20.0
-phi=0
+beta=25.0
+phi=0*np.pi # FZAの初期位相
+d=5.0 # FZAからセンサまでの距離(mm)
+z=280.0 # 被写体からFZAまでの距離
 
 # 座標グリッドを作成
 x=np.linspace(-grid_range,grid_range,image_size)
@@ -19,7 +21,7 @@ y=np.linspace(-grid_range,grid_range,image_size)
 # 1次元配列から２次元の座標を作成
 Xp,Yp=np.meshgrid(x,y)
 
-# FZAの透過率を計算
+# FZAの透過率を計算(512*512)
 transmittance=0.5*(1+np.cos(beta*(Xp**2+Yp**2)-phi))
 
 # 計算結果を画像として表示
