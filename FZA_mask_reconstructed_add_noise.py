@@ -140,7 +140,7 @@ def visualize_psf(h_FZA):
     plt.imshow(h_FZA, cmap='gray')
     plt.title("PSF (h_FZA) for Aliasing Check (φ=3π/2)")
     plt.colorbar()
-    plt.savefig('FZA_improve_phi_3pi_half.png')
+    plt.savefig('img/FZA/FZA_phi_3pi_half.png')
     plt.show()
 
 
@@ -159,7 +159,7 @@ def visualize_coded_images(original_img,coded_images,phase_labels):
         axes[i+1].imshow(img_display)
         axes[i+1].set_title(f"Coded Image ({phase_labels[i]})")
     plt.tight_layout()
-    plt.savefig('coded_images_improve.png')
+    plt.savefig('img/coded_imagecoded_images_improve.png')
     plt.show()
 
 
@@ -205,7 +205,7 @@ def visualize_noise_effect(original_coded_img, processed_coded_img):
     fig.colorbar(im, ax=axes[2], orientation='vertical').set_label('Noise Value')
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig('noise_effect_visualization.png')
+    plt.savefig('img/noise_effect/noise_effect_visualization.png')
     plt.show()
 
 
@@ -244,7 +244,7 @@ def visualize_synthesis_result(g_FS_R, g_FS_G, g_FS_B):
     fig.colorbar(im2, ax=axes[2], orientation='vertical').set_label('Phase (radians)')
     
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig('fringe_scan_synthesis_noise.png')
+    plt.savefig('img/FS/fringe_scan_synthesis_noise.png')
     plt.show()
 
 
@@ -258,13 +258,13 @@ def visualize_final_result(original_img, reconstructed_image_raw):
         reconstructed_display = reconstructed_image_raw.astype(np.uint8)
         
     fig, axes = plt.subplots(1, 2, figsize=(12, 6))
-    fig.suptitle("compare", fontsize=16)
+    fig.suptitle("compare (add noise)", fontsize=16)
     axes[0].imshow(original_img)
     axes[0].set_title("Original Image")
     axes[1].imshow(reconstructed_display)
     axes[1].set_title("Reconstructed Image (Conventional)")
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig('final_reconstruction_noise.png')
+    plt.savefig('img/final_image/final_reconstruction_noise.png')
     plt.show()
 
 
