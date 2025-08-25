@@ -160,7 +160,6 @@ H_geo_inv=np.conj(H_geo)
 # H_geo = np.exp(-j * (np.pi**2 / beta_prime) * (U**2 + V**2))
 # H_geo_inv = np.conj(H_geo)
 
-
 # ----------------------------------------------------------------------------
 
 print("作成完了")
