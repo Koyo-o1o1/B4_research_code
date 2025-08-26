@@ -17,8 +17,7 @@ def generate_code_images(R_ch,G_ch,B_ch,phases,beta_prime,X,Y):
         h_FZA=0.5*(1+np.cos(beta_prime*(X**2+Y**2)-phi))
 
         # FZAのエイリアシングを確認
-        if i==3:
-            visualize_psf(h_FZA)
+        visualize_psf(h_FZA,i)
 
         # 各カラーチャンネルで畳み込みを計算(式(3))
         coded_R=signal.fftconvolve(R_ch,h_FZA,mode='same')
@@ -134,14 +133,30 @@ def reconstruct_image(g_FS_R,g_FS_G,g_FS_B,beta_prime,X,Y):
 
 # 可視化用関数
 
-def visualize_psf(h_FZA):
+def visualize_psf(h_FZA,i):
     # PSFを画像として表示してエイリアシングを確認する
     plt.figure(figsize=(6, 6))
     plt.imshow(h_FZA, cmap='gray')
-    plt.title("PSF (h_FZA) for Aliasing Check (φ=3π/2)")
-    plt.colorbar()
-    plt.savefig('FZA_improve_phi_3pi_half.png')
-    plt.show()
+    if i==0:
+        plt.title("PSF (h_FZA) for Aliasing Check (φ=0)")
+        plt.colorbar()
+        plt.savefig('img/FZA/FZA_phi_0.png')
+        plt.show()
+    elif i==1:
+        plt.title("PSF (h_FZA) for Aliasing Check (φ=π/2)")
+        plt.colorbar()
+        plt.savefig('img/FZA/FZA_phi_pi_half.png')
+        plt.show()
+    elif i==2:
+        plt.title("PSF (h_FZA) for Aliasing Check (φ=π)")
+        plt.colorbar()
+        plt.savefig('img/FZA/FZA_phi_pi.png')
+        plt.show()
+    else:
+        plt.title("PSF (h_FZA) for Aliasing Check (φ=3π/2)")
+        plt.colorbar()
+        plt.savefig('img/FZA/FZA_phi_3pi_half.png')
+        plt.show()
 
 
 def visualize_coded_images(original_img,coded_images,phase_labels):
@@ -159,7 +174,7 @@ def visualize_coded_images(original_img,coded_images,phase_labels):
         axes[i+1].imshow(img_display)
         axes[i+1].set_title(f"Coded Image ({phase_labels[i]})")
     plt.tight_layout()
-    plt.savefig('coded_images_improve.png')
+    plt.savefig('img/coded_image/coded_images.png')
     plt.show()
 
 
@@ -198,7 +213,7 @@ def visualize_synthesis_result(g_FS_R, g_FS_G, g_FS_B):
     fig.colorbar(im2, ax=axes[2], orientation='vertical').set_label('Phase (radians)')
     
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig('fringe_scan_synthesis_improve.png')
+    plt.savefig('img/FS/fringe_scan_synthesis.png')
     plt.show()
 
 
@@ -218,7 +233,7 @@ def visualize_final_result(original_img, reconstructed_image_raw):
     axes[1].imshow(reconstructed_display)
     axes[1].set_title("Reconstructed Image (Conventional)")
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig('final_reconstruction_improve.png')
+    plt.savefig('img/final_image/final_reconstruction.png')
     plt.show()
 
 
@@ -230,7 +245,7 @@ if __name__ == '__main__':
     # パラメータの設定
     image_size=512
     grid_range=3.0
-    beta=25.0
+    beta=14.5
     d=5.0
     z=280.0
     M=d/z
@@ -258,7 +273,7 @@ if __name__ == '__main__':
     # 処理を順に実行
     # 符号化画像を生成
     coded_images=generate_code_images(R_channel,G_channel,B_channel,phases,beta_prime,X,Y)
-
+    
     # フリンジスキャンを実行
     g_FS_R,g_FS_G,g_FS_B=synthesize_fringe_scan(coded_images)
     
