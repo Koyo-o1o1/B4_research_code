@@ -245,7 +245,7 @@ if __name__ == '__main__':
     # パラメータの設定
     image_size=512
     grid_range=3.0
-    beta=14.5
+    beta=19.0
     d=5.0
     z=280.0
     M=d/z
