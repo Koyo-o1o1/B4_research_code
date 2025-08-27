@@ -17,8 +17,7 @@ def generate_code_images(R_ch,G_ch,B_ch,phases,beta_prime,X,Y):
         h_FZA=0.5*(1+np.cos(beta_prime*(X**2+Y**2)-phi))
 
         # FZAのエイリアシングを確認
-        if i==3:
-            visualize_psf(h_FZA)
+        # visualize_psf(h_FZA,i)
 
         # 各カラーチャンネルで畳み込みを計算(式(3))
         coded_R=signal.fftconvolve(R_ch,h_FZA,mode='same')
@@ -33,70 +32,43 @@ def generate_code_images(R_ch,G_ch,B_ch,phases,beta_prime,X,Y):
     print("畳み込み完了")
     return coded_images
 
+def add_awgn(signal, snr_db):
+    # 信号パワー(画像処理では分散？？)
+    signal_power = np.var(signal)
+    # print(signal_power)
+    # 目標SNRから雑音パワーを算出
+    snr_linear = 10**(snr_db/10)
+    noise_power = signal_power / snr_linear
 
-# ホワイトガウスノイズを付加、12bit量子化
-# def add_noise_and_quantization(coded_images,snr_db):
-#     print(f"\n{snr_db}dBのノイズ付加および12bit量子化...")
 
-#     quantization_lebels=2**12-1
-
-#     # 信号パワーの計算
-#     signal_power=np.mean(coded_images[0]**2)
-
-#     # ノイズパワーの計算とノイズ生成
-#     # snr(dB)からノイズの標準偏差を計算
-#     snr_linear=10**(snr_db/10)
-#     noise_power=signal_power/snr_linear
-#     noise_sigma=np.sqrt(noise_power)
-
-#     print(noise_sigma)
-
-#     noisy_images=[]
-#     for img in coded_images:
-#         # 各画像にガウスノイズを付加
-#         noise=np.random.normal(0,noise_sigma,img.shape)
-#         noisy_images.append(img+noise)
+    # noise_sigma=np.sqrt(noise_power)
+    # print(f"信号パワー: {signal_power:.2e}, ノイズパワー: {noise_power:.2e}")
+    # print(f"計算されたノイズの標準偏差 (sigma): {noise_sigma}")
     
-#     # 12bitへの量子化
-
-#     # すべてのノイズ付加画像に共通のスケールを適用するため最大値最小値をもとめる
-#     global_min=min(np.min(img) for img in noisy_images)
-#     global_max=max(np.max(img) for img in noisy_images)
-
-#     quantized_images=[]
-#     for img in noisy_images:
-#         # データを0～1の範囲にスケーリング
-#         scaled_img=(img-global_min)/(global_max-global_min)
-#         # 0～2095(2**12-1)の範囲に変換し整数を丸める
-#         quantized_img_int=np.round(scaled_img*quantization_lebels)
-#         # 後の研鑽のためにfloat型へ
-#         quantized_images.append(quantized_img_int.astype(np.float64))
+    # ガウス雑音生成
+    # 引数(平均、標準偏差、画像データのサイズ分のノイズ)
+    noise = np.random.normal(0, np.sqrt(noise_power), signal.shape)
     
-#     print("処理終了")
-#     return quantized_images
+    # print("noise")
+    # print("-----------------------------")
+    # print(noise)
+    # print("-----------------------------")
+
+    return signal + noise
+
+def quantize_to_12bit(signal):
+    # 最小値0, 最大値1 に正規化
+    sig_min, sig_max = np.min(signal), np.max(signal)
+    norm_signal = (signal - sig_min) / (sig_max - sig_min + 1e-12)
     
-import numpy as np
+    # 12bitに量子化 (0〜4095)
+    quantized = np.round(norm_signal * 4095)
+    
+    # 0〜1に戻す
+    dequantized = quantized / 4095.0
 
-def add_awgn_then_quantize_snr(coded_images, snr_db=30.0, bit_depth=12):
-    Q = 2**bit_depth - 1
-    # スケーリング基準はノイズ前のデータから取得
-    global_min = min(np.min(img) for img in coded_images)
-    global_max = max(np.max(img) for img in coded_images)
-    scale = Q / max(global_max - global_min, 1e-12)
-
-    # SNR[dB]→ノイズ標準偏差（ノイズはスケーリング前の単位で加える）
-    signal_power = np.mean(np.stack(coded_images, axis=0)**2)
-    noise_sigma = np.sqrt(signal_power / (10**(snr_db/10)))
-
-    out = []
-    for img in coded_images:
-        noisy = img + np.random.normal(0, noise_sigma, img.shape)     # AWGN
-        quantized = np.round((noisy - global_min) * scale)             # 12bit量子化
-        quantized = np.clip(quantized, 0, Q)
-        out.append(quantized.astype(np.float64))
-    return out
-
-
+    # 元スケールに戻す(逆正規化)
+    return dequantized * (sig_max - sig_min) + sig_min
 
 
 # フリンジスキャン(式(6))
@@ -158,14 +130,30 @@ def reconstruct_image(g_FS_R,g_FS_G,g_FS_B,beta_prime,X,Y):
 
 # 可視化用関数
 
-def visualize_psf(h_FZA):
+def visualize_psf(h_FZA,i):
     # PSFを画像として表示してエイリアシングを確認する
     plt.figure(figsize=(6, 6))
     plt.imshow(h_FZA, cmap='gray')
-    plt.title("PSF (h_FZA) for Aliasing Check (φ=3π/2)")
-    plt.colorbar()
-    plt.savefig('img/FZA/FZA_phi_3pi_half.png')
-    plt.show()
+    if i==0:
+        plt.title("PSF (h_FZA) for Aliasing Check (φ=0)")
+        plt.colorbar()
+        plt.savefig('img/FZA/FZA_phi_0.png')
+        plt.show()
+    elif i==1:
+        plt.title("PSF (h_FZA) for Aliasing Check (φ=π/2)")
+        plt.colorbar()
+        plt.savefig('img/FZA/FZA_phi_pi_half.png')
+        plt.show()
+    elif i==2:
+        plt.title("PSF (h_FZA) for Aliasing Check (φ=π)")
+        plt.colorbar()
+        plt.savefig('img/FZA/FZA_phi_pi.png')
+        plt.show()
+    else:
+        plt.title("PSF (h_FZA) for Aliasing Check (φ=3π/2)")
+        plt.colorbar()
+        plt.savefig('img/FZA/FZA_phi_3pi_half.png')
+        plt.show()
 
 
 def visualize_coded_images(original_img,coded_images,phase_labels):
@@ -183,53 +171,7 @@ def visualize_coded_images(original_img,coded_images,phase_labels):
         axes[i+1].imshow(img_display)
         axes[i+1].set_title(f"Coded Image ({phase_labels[i]})")
     plt.tight_layout()
-    plt.savefig('img/coded_image/coded_images_improve.png')
-    plt.show()
-
-
-def visualize_noise_effect(original_coded_img, processed_coded_img):
-    # ノイズ付加と量子化の前後の画像を比較して可視化する
-    
-    # --- 表示のために各画像を正規化 ---
-    # 処理前の画像
-    img_min1, img_max1 = np.min(original_coded_img), np.max(original_coded_img)
-    if img_max1 > img_min1:
-        original_display = ((original_coded_img - img_min1) / (img_max1 - img_min1) * 255).astype(np.uint8)
-    else:
-        original_display = original_coded_img.astype(np.uint8)
-
-    # 処理後の画像
-    img_min2, img_max2 = np.min(processed_coded_img), np.max(processed_coded_img)
-    if img_max2 > img_min2:
-        processed_display = ((processed_coded_img - img_min2) / (img_max2 - img_min2) * 255).astype(np.uint8)
-    else:
-        processed_display = processed_coded_img.astype(np.uint8)
-        
-    # --- ノイズ成分のみを抽出 ---
-    # スケールを合わせるために、処理後のデータを元のデータと同じ範囲に再スケーリングしてから引き算
-    rescaled_processed = processed_coded_img * ((img_max1 - img_min1) / (img_max2 - img_min2)) + img_min1
-    noise_residual = rescaled_processed - original_coded_img
-    # RGBのノイズを平均して白黒（グレースケール）に変換
-    noise_grayscale = np.mean(noise_residual, axis=-1)
-    
-    # print(noise_grayscale)
-
-    # --- 可視化 ---
-    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-    fig.suptitle("noise_effect", fontsize=16)
-    
-    axes[0].imshow(original_display)
-    axes[0].set_title("Before Noise (φ=0)")
-    
-    axes[1].imshow(processed_display)
-    axes[1].set_title("After Noise & Quantization (φ=0)")
-    
-    im = axes[2].imshow(noise_grayscale, cmap='gray')
-    axes[2].set_title("Noise Component (GrayScale)")
-    fig.colorbar(im, ax=axes[2], orientation='vertical').set_label('Noise Value')
-
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig('img/noise_effect/noise_effect_visualization.png')
+    plt.savefig('img/coded_image/coded_images_noise.png')
     plt.show()
 
 
@@ -282,7 +224,7 @@ def visualize_final_result(original_img, reconstructed_image_raw):
         reconstructed_display = reconstructed_image_raw.astype(np.uint8)
         
     fig, axes = plt.subplots(1, 2, figsize=(12, 6))
-    fig.suptitle("compare (add noise)", fontsize=16)
+    fig.suptitle("compare", fontsize=16)
     axes[0].imshow(original_img)
     axes[0].set_title("Original Image")
     axes[1].imshow(reconstructed_display)
@@ -300,11 +242,12 @@ if __name__ == '__main__':
     # パラメータの設定
     image_size=512
     grid_range=3.0
-    beta=25.0
+    beta=19.0
     d=5.0
     z=280.0
     M=d/z
     beta_prime=beta/((M+1)**2)
+    snr_db=30
 
     phases=[0,np.pi/2,np.pi,3*np.pi/2]
     phase_labels=["φ=0", "φ=π/2", "φ=π", "φ=3π/2"]
@@ -329,14 +272,15 @@ if __name__ == '__main__':
     # 符号化画像を生成
     coded_images=generate_code_images(R_channel,G_channel,B_channel,phases,beta_prime,X,Y)
 
-    # ホワイトガウスノイズ付加と量子化
-    snr_db=30.0
-    processed_coded_images=add_awgn_then_quantize_snr(coded_images, snr_db=30.0, bit_depth=12)
-    # ノイズの影響を可視化
-    visualize_noise_effect(coded_images[0], processed_coded_images[0])
+    # AWGN & 量子化を各符号化画像に適用
+    noisy_quantized_images = []
+    for img in coded_images:
+        img_noisy = add_awgn(img, snr_db)            # 30dB AWGN
+        img_quantized = quantize_to_12bit(img_noisy)
+        noisy_quantized_images.append(img_quantized)
 
     # フリンジスキャンを実行
-    g_FS_R,g_FS_G,g_FS_B=synthesize_fringe_scan(processed_coded_images)
+    g_FS_R,g_FS_G,g_FS_B=synthesize_fringe_scan(noisy_quantized_images)
     
     # 画像を再生成
     reconstructed_image_raw=reconstruct_image(g_FS_R,g_FS_G,g_FS_B,beta_prime,X,Y)

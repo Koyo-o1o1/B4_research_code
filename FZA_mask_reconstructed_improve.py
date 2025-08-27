@@ -32,48 +32,6 @@ def generate_code_images(R_ch,G_ch,B_ch,phases,beta_prime,X,Y):
     print("畳み込み完了")
     return coded_images
 
-
-# ホワイトガウスノイズを付加、12bit量子化
-def add_noise_and_quantization(coded_images,snr_db):
-    print(f"\n{snr_db}dBのノイズ付加および12bit量子化...")
-
-    # 信号パワーの計算
-    signal_power=np.mean(coded_images[0]**2)
-
-    # ノイズパワーの計算とノイズ生成
-    # snr(dB)からノイズの標準偏差を計算
-    snr_linear=10**(snr_db/10)
-    noise_power=signal_power/snr_linear
-    noise_sigma=np.sqrt(noise_power)
-
-    noisy_images=[]
-    for img in coded_images:
-        # 各画像にガウスノイズを付加
-        noise=np.random.normal(0,noise_sigma,img.shape)
-        noisy_images.append(img+noise)
-    
-    # 12bitへの量子化
-    quantization_lebels=2**12-1
-
-    # すべてのノイズ付加画像に共通のスケールを適用するため最大値最小値をもとめる
-    global_min=min(np.min(img) for img in noisy_images)
-    global_max=min(np.max(img) for img in noisy_images)
-
-    quantized_images=[]
-    for img in noisy_images:
-        # データを0～1の範囲にスケーリング
-        scaled_img=(img-global_min)/(global_max-global_min)
-        # 0～2095(2**12-1)の範囲に変換し整数を丸める
-        quantized_img_int=np.round(scaled_img*quantization_lebels)
-        # 後の研鑽のためにfloat型へ
-        quantized_images.append(quantized_img_int.astype(np.float64))
-    
-    print("処理終了")
-    return quantized_images
-    
-
-
-
 # フリンジスキャン(式(6))
 def synthesize_fringe_scan(coded_images):
     # ４枚の複素数画像を１枚に合成
