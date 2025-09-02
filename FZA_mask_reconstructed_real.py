@@ -181,15 +181,16 @@ if __name__ == '__main__':
     y=np.linspace(-slm_height/2,slm_height/2,slm_resolution_y)
     X,Y=np.meshgrid(x, y)
 
-    beta=0.925e6
+    beta=6.5e5
 
     # 実際のパラメータ
     d=5.0e-3
-    z=2.5e-2
+    z=2.5e-1
     
     M=d/z
     beta_prime=beta/((M+1)**2)
-    
+    print(beta_prime)    
+
     # ノイズパラメータ(db)
     snr_db=30
     # 位相の定義
