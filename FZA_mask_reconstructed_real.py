@@ -25,7 +25,7 @@ def generate_code_images(gray_image,phases,beta_prime,X,Y):
         h_FZA=0.5*(1+np.cos(beta_prime*(X**2+Y**2)-phi))
 
         # FZAのエイリアシングを確認
-        visualize_psf(h_FZA,i)
+        # visualize_psf(h_FZA,i)
 
         # グレースケールで畳み込み式((3))
         coded_image=signal.fftconvolve(gray_image, h_FZA, mode='same')
@@ -96,19 +96,21 @@ def reconstruct_image(g_FS_sensor,h_geo_sensor):
     j=1j
 
     # 複素数画像から逆畳み込みにより画像再構成
-    h_geo_sensor=np.fft.fft2(np.fft.ifftshift(h_geo_sensor))
+    H_geo_sensor=np.fft.fft2(np.fft.ifftshift(h_geo_sensor))
     # 逆フィルタの作成
-    H_geo_inv_sensor=np.conj(h_geo_sensor)
+    H_geo_inv_sensor=np.conj(H_geo_sensor)
 
     # 画像再構成(式(9))
-    G_FS_sensor=np.fft.fft2(g_FS_sensor)
+    G_FS_sensor=np.fft.fft2(np.fft.ifftshift(g_FS_sensor))
 
     # 周波数領域で逆フィルタを適用
     F_reconstructed_sensor=G_FS_sensor*H_geo_inv_sensor
 
     # 逆フーリエ変換で空間領域へ戻す
-    f_geo_sensor=np.fft.ifft2(F_reconstructed_sensor)
+    f_geo_sensor_shifted=np.fft.ifft2(F_reconstructed_sensor)
 
+    f_geo_sensor=np.fft.fftshift(f_geo_sensor_shifted)
+    
     # 絶対値を取る
     reconstructed_image_raw=np.abs(f_geo_sensor)
 
@@ -126,7 +128,7 @@ def visualize_psf(h_FZA,i):
     plt.imshow(h_FZA, cmap='gray')
     plt.title(f"PSF (h_FZA) for Aliasing Check (φ={i*90}°)")
     plt.colorbar()
-    plt.savefig(f'img/FZA/FZA_phi_{i*90}_real.png')
+    plt.savefig(f'img/FZA/FZA_phi_{i*90}_real_____.png')
     plt.show()
 
 
@@ -139,7 +141,7 @@ def visualize_coded_images(original_img,coded_images,phase_labels):
         axes[i+1].imshow(img, cmap='gray')
         axes[i+1].set_title(f"Coded Image ({phase_labels[i]})")
     plt.tight_layout()
-    plt.savefig('img/coded_image/coded_images_real.png')
+    plt.savefig('img/coded_image/coded_images_real_____.png')
     plt.show()
 
 
@@ -163,7 +165,7 @@ def visualize_synthesis_result(g_FS):
     cbar.set_ticklabels(['0', 'π/2', 'π', '3π/2', '2π'])
     
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig('img/FS/fringe_scan_synthesis_real.png')
+    plt.savefig('img/FS/fringe_scan_synthesis_real_____.png')
     plt.show()
 
 
@@ -176,7 +178,7 @@ def visualize_final_result(original_img, reconstructed_image_raw):
     axes[1].imshow(reconstructed_image_raw, cmap='gray')
     axes[1].set_title("Reconstructed Image (Conventional)")
     plt.tight_layout()
-    plt.savefig('img/final_image/final_reconstruction_real.png')
+    # plt.savefig('img/final_image/final_reconstruction_real_____.png')
     plt.show()
 
 
@@ -205,9 +207,15 @@ if __name__ == '__main__':
     sensor_pixel_pitch=3.45e-6  # 3.45µm
 
     # パラメータの設定
-    beta=0.6e6
+    # simulation ver
+    beta=0.4e6
     d=0.5e-2
     z=2.5e-1
+
+    # 実機ver
+    # beta=2.4e9
+    # d=5.0-3
+    # z=7.0e-2
     M=d/z
     beta_prime=beta/((M+1)**2)
     snr_db=30.0
@@ -216,6 +224,7 @@ if __name__ == '__main__':
 
     # 被写体画像のパス
     image_path="C:\\Users\\ko11s\\OneDrive\\Desktop\\research\\b\\img\\subject.jpg" 
+    # image_path="C:\\Users\\ko11s\\OneDrive\\Desktop\\research\\b\\python\\point_light_source.png" 
 
     # 画像をSLMの解像度(1024x768)にリサイズして読み込み
     input_image_uint8 = np.array(
@@ -253,6 +262,6 @@ if __name__ == '__main__':
     reconstructed_image_raw=reconstruct_image(g_FS_sensor,h_geo_sensor)
 
     # 結果の可視化
-    visualize_coded_images(input_image_uint8, coded_images_sensor, phase_labels)
-    visualize_synthesis_result(g_FS_sensor)
+    # visualize_coded_images(input_image_uint8, coded_images_sensor, phase_labels)
+    # visualize_synthesis_result(g_FS_sensor)
     visualize_final_result(input_image_uint8, reconstructed_image_raw)
